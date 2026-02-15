@@ -1568,11 +1568,16 @@ Para más información, revisa la documentación en docs/`);
     async sincronizarTodo() {
         const btnSync = document.getElementById('btn-sync-general');
         const statusDiv = document.getElementById('sync-status-header');
+        if (!btnSync) {
+            return;
+        }
 
-        // Mostrar estado de sincronizacion
+        // Mostrar estado de sincronizacion solo en el boton principal.
         btnSync.classList.add('syncing');
-        statusDiv.style.display = 'block';
         btnSync.disabled = true;
+        if (statusDiv) {
+            statusDiv.style.display = 'none';
+        }
 
         try {
             // Primero guardar la configuracion actual
@@ -1612,8 +1617,10 @@ Para más información, revisa la documentación en docs/`);
         } finally {
             // Restaurar boton
             btnSync.classList.remove('syncing');
-            statusDiv.style.display = 'none';
             btnSync.disabled = false;
+            if (statusDiv) {
+                statusDiv.style.display = 'none';
+            }
         }
     }
     showToast(message, type = 'info') {

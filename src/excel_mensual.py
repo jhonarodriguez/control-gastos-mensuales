@@ -39,6 +39,17 @@ class GeneradorExcelMensual:
     FILA_VARIABLES_DATA_FIN = 28
     FILA_VARIABLES_TOTAL = 29
 
+    DEFAULT_RETIRO_EFECTIVO_ITEMS = ["gasto:arriendo"]
+    DEFAULT_MOVII_ITEMS = [
+        "gasto:netflix",
+        "gasto:youtube_premium",
+        "gasto:google_drive",
+        "gasto:mercadolibre",
+        "gasto:hbo_max",
+        "gasto:pago_app_fitia",
+        "gasto:sub_facebook_don_j",
+    ]
+
     ORDEN_GASTOS_FIJOS = [
         "arriendo",
         "mercado_primera_quincena",
@@ -199,6 +210,67 @@ class GeneradorExcelMensual:
 
         return ingresos, total
 
+    def _obtener_compromisos_por_id(self):
+        compromisos = {}
+
+        for key, datos in (self.config.get("gastos_fijos") or {}).items():
+            item_id = f"gasto:{key}"
+            compromisos[item_id] = {
+                "id": item_id,
+                "key": key,
+                "concepto": str(key).replace("_", " ").title(),
+                "valor": self._normalizar_numero((datos or {}).get("valor", 0)),
+            }
+
+        for key, datos in (self.config.get("deudas_fijas") or {}).items():
+            item_id = f"deuda:{key}"
+            compromisos[item_id] = {
+                "id": item_id,
+                "key": key,
+                "concepto": str(key).replace("_", " ").title(),
+                "valor": self._normalizar_numero((datos or {}).get("valor", 0)),
+            }
+
+        return compromisos
+
+    def _normalizar_item_flujo(self, raw_item, compromisos):
+        if not isinstance(raw_item, str):
+            return None
+
+        item = raw_item.strip()
+        if not item:
+            return None
+        if item in compromisos:
+            return item
+
+        # Compatibilidad con formato legacy por clave sin prefijo.
+        legacy_key = item.lower().replace(" ", "_")
+        gasto_id = f"gasto:{legacy_key}"
+        deuda_id = f"deuda:{legacy_key}"
+        if gasto_id in compromisos:
+            return gasto_id
+        if deuda_id in compromisos:
+            return deuda_id
+        return None
+
+    def _obtener_total_flujo(self, clave_items, defaults):
+        compromisos = self._obtener_compromisos_por_id()
+        flujos = self.config.get("flujos_efectivo", {}) or {}
+        seleccion_raw = flujos.get(clave_items, defaults)
+        if not isinstance(seleccion_raw, list):
+            seleccion_raw = defaults
+
+        total = 0.0
+        vistos = set()
+        for raw_item in seleccion_raw:
+            item_id = self._normalizar_item_flujo(raw_item, compromisos)
+            if not item_id or item_id in vistos:
+                continue
+            vistos.add(item_id)
+            total += self._normalizar_numero((compromisos.get(item_id) or {}).get("valor", 0))
+
+        return total
+
     def _normalizar_detalle_variable(self, categoria, fecha):
         categoria_txt = "" if categoria is None else str(categoria).strip()
         fecha_txt = "" if fecha is None else str(fecha).strip()
@@ -338,6 +410,14 @@ class GeneradorExcelMensual:
         saldo_real = self._normalizar_numero(self.config.get("saldo_bancario", {}).get("valor_actual", 0))
         saldo_inicio = self._obtener_saldo_inicio_mes(mes_nombre, anio)
         _ingresos_extra_detalle, ingresos_extra_total = self._obtener_ingresos_extra_mes(mes_nombre, anio)
+        retiro_total = self._obtener_total_flujo(
+            "retiro_efectivo_items",
+            self.DEFAULT_RETIRO_EFECTIVO_ITEMS,
+        )
+        movii_total = self._obtener_total_flujo(
+            "movii_items",
+            self.DEFAULT_MOVII_ITEMS,
+        )
 
         ws["A1"] = f"CONTROL DE GASTOS - {mes_nombre.upper()} {anio}"
         ws.merge_cells("A1:K1")
@@ -372,6 +452,8 @@ class GeneradorExcelMensual:
             (7, "Saldo Proyectado", "=B6+B3-B4-B5", self.colores["blanco"]),
             (8, "Saldo Real Banco", saldo_real, self.colores["blanco"]),
             (9, "Diferencia", "=B8-B7", self.colores["blanco"]),
+            (10, "Retiro en efectivo", retiro_total, self.colores["blanco"]),
+            (11, "Recarga MOVII", movii_total, self.colores["blanco"]),
         ]
 
         for fila, label, value, color in resumen_labels:

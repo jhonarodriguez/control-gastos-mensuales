@@ -144,7 +144,7 @@ body {
     gap: 12px;
 }
 
-.btn-sync-header {
+.btn-icon.btn-sync-header {
     position: relative;
     background: linear-gradient(135deg, #4285f4, #34a853);
     color: white !important;
@@ -160,13 +160,20 @@ body {
     box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
-.btn-sync-header:hover {
+.btn-icon.btn-sync-header:hover {
     transform: scale(1.1);
     box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    color: white !important;
+    background: linear-gradient(135deg, #4285f4, #34a853);
 }
 
-.btn-sync-header.syncing {
+.btn-icon.btn-sync-header.syncing {
     animation: spin 1s linear infinite;
+}
+
+.btn-icon.btn-sync-header i {
+    font-size: 16px;
+    line-height: 1;
 }
 
 @keyframes spin {
@@ -242,7 +249,7 @@ body {
 /* Dashboard Grid */
 .dashboard-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
     gap: 24px;
     margin-bottom: 24px;
 }
@@ -254,6 +261,8 @@ body {
     padding: 20px;
     border-radius: var(--radius);
     transition: var(--transition);
+    min-height: 106px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
 }
 
 .stat-card:hover {
@@ -298,15 +307,44 @@ body {
 }
 
 .stat-info h3 {
-    font-size: 14px;
-    font-weight: 500;
-    margin-bottom: 4px;
+    display: block;
+    margin: 0 0 8px;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.2;
+    color: inherit !important;
     opacity: 0.9;
 }
 
 .stat-value {
     font-size: 24px;
     font-weight: 700;
+    line-height: 1.1;
+    color: inherit;
+}
+
+.stat-card small {
+    display: inline-block;
+    margin-top: 6px;
+    color: inherit;
+    opacity: 0.92;
+    font-weight: 500;
+}
+
+.stat-card:not(.ahorro) .stat-icon {
+    color: #FFFFFF;
+}
+
+.stat-card.ahorro .stat-icon {
+    background: rgba(255, 255, 255, 0.35);
+    color: #1F2937;
+}
+
+.stat-card.ahorro .stat-info h3,
+.stat-card.ahorro .stat-value,
+.stat-card.ahorro small {
+    color: #1F2937 !important;
+    opacity: 1;
 }
 
 /* Forms */
