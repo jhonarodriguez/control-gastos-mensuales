@@ -196,8 +196,7 @@ class GoogleDriveManager:
     
     def sincronizar_archivo_mes(self, nombre_archivo=None):
         if nombre_archivo is None:
-            mes_actual = datetime.now().strftime('%Y-%m')
-            nombre_archivo = f'control_gastos_{mes_actual}.xlsx'
+            nombre_archivo = 'ControlDeGastos.xlsx'
         
         ruta_local = os.path.join(self.carpeta_excel, nombre_archivo)
         

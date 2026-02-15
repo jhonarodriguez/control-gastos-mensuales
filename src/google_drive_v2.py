@@ -167,6 +167,7 @@ class GoogleDriveManager:
                 try:
                     file = self.service.files().update(
                         fileId=self.archivo_excel_id,
+                        body={'name': self.nombre_archivo},
                         media_body=media,
                         fields='id, name, mimeType, size'
                     ).execute()

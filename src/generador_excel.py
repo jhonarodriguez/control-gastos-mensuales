@@ -342,7 +342,7 @@ class GeneradorExcelGastos:
     
     def crear_plantilla_inicial(self):
         wb, nombre_mes = self.crear_libro_nuevo()
-        ruta = self.guardar_excel(wb, f'control_gastos_{nombre_mes}')
+        ruta = self.guardar_excel(wb, 'ControlDeGastos')
         return ruta
 
 if __name__ == '__main__':
