@@ -2,6 +2,7 @@
 import json
 import time
 import io
+import re
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
@@ -273,8 +274,78 @@ class GoogleDriveManager:
             print(f'Error al crear enlace: {e}')
             return None
 
-def sincronizar_con_drive(config_path='config/configuracion.json'):
-    """Funcion principal para sincronizar el Excel con Drive."""
+def _resolver_mes_objetivo(month_mode='actual'):
+    """Resolver el mes objetivo: actual, siguiente o YYYY-MM."""
+    modo = str(month_mode or 'actual').strip().lower()
+    ahora = datetime.now()
+    anio_actual = ahora.year
+    mes_actual = ahora.month
+
+    if modo in ('actual', 'mes_actual', 'current'):
+        objetivo = datetime(anio_actual, mes_actual, 1)
+        modo_normalizado = 'actual'
+    elif modo in ('siguiente', 'mes_siguiente', 'next', 'proximo'):
+        if mes_actual == 12:
+            objetivo = datetime(anio_actual + 1, 1, 1)
+        else:
+            objetivo = datetime(anio_actual, mes_actual + 1, 1)
+        modo_normalizado = 'siguiente'
+    elif re.match(r'^\d{4}-\d{2}$', modo):
+        anio = int(modo[:4])
+        mes = int(modo[5:7])
+        if mes < 1 or mes > 12:
+            raise ValueError('Mes invalido en month_mode. Usa YYYY-MM con MM entre 01 y 12.')
+        objetivo = datetime(anio, mes, 1)
+        modo_normalizado = modo
+    else:
+        raise ValueError('month_mode invalido. Usa "actual", "siguiente" o "YYYY-MM".')
+
+    meses = [
+        'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    ]
+    mes_nombre = meses[objetivo.month - 1]
+    anio = objetivo.year
+    clave_mes = f'{anio:04d}-{objetivo.month:02d}'
+    hoja_objetivo = f'{mes_nombre} {anio}'
+    return {
+        'month_mode': modo_normalizado,
+        'mes_nombre': mes_nombre,
+        'anio': anio,
+        'clave_mes': clave_mes,
+        'hoja_objetivo': hoja_objetivo,
+    }
+
+
+def _calcular_ingresos_extra_mes(config, clave_mes):
+    historial = config.get('historial_saldos', {}) if isinstance(config, dict) else {}
+    registro_mes = {}
+    if isinstance(historial, dict):
+        saldos_mensuales = historial.get('saldos_mensuales', {})
+        if isinstance(saldos_mensuales, dict):
+            registro_mes = saldos_mensuales.get(clave_mes, {}) or {}
+        if not registro_mes and isinstance(historial.get(clave_mes), dict):
+            registro_mes = historial.get(clave_mes, {})
+
+    ingresos_raw = registro_mes.get('ingresos_extra', []) if isinstance(registro_mes, dict) else []
+    total = 0.0
+    count = 0
+    if isinstance(ingresos_raw, list):
+        for item in ingresos_raw:
+            if not isinstance(item, dict):
+                continue
+            try:
+                valor = float(item.get('valor', 0) or 0)
+            except Exception:
+                valor = 0.0
+            if valor > 0:
+                total += valor
+                count += 1
+    return total, count
+
+
+def sincronizar_con_drive(config_path='config/configuracion.json', month_mode='actual'):
+    """Sincronizar Excel con Drive creando/actualizando la hoja del mes objetivo."""
     try:
         from excel_mensual import GeneradorExcelMensual
     except ModuleNotFoundError:
@@ -285,57 +356,59 @@ def sincronizar_con_drive(config_path='config/configuracion.json'):
     print('SINCRONIZACION CON GOOGLE DRIVE')
     print('=' * 60)
 
+    target = _resolver_mes_objetivo(month_mode)
+    mes_nombre = target['mes_nombre']
+    anio_objetivo = target['anio']
+    hoja_objetivo = target['hoja_objetivo']
+    clave_mes = target['clave_mes']
+    month_mode = target['month_mode']
+
     drive = GoogleDriveManager(config_path)
     excel_gen = GeneradorExcelMensual(config_path)
 
     if not drive.autenticar():
-        print('Error: No se pudo autenticar con Drive')
-        return False
+        msg = 'No se pudo autenticar con Drive'
+        print(f'Error: {msg}')
+        return {'success': False, 'message': msg}
 
     carpeta_id = drive.crear_o_obtener_carpeta()
     if not carpeta_id:
-        print('Error: No se pudo crear/obtener carpeta')
-        return False
+        msg = 'No se pudo crear/obtener carpeta en Drive'
+        print(f'Error: {msg}')
+        return {'success': False, 'message': msg}
 
-    meses = [
-        'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-    ]
-    mes_actual = meses[datetime.now().month - 1]
-    anio_actual = datetime.now().year
-    hoja_actual = f'{mes_actual} {anio_actual}'
+    wb = None
+    archivo_existente = False
+    hoja_ya_existia = False
 
-    ruta_nueva = None
     if drive.archivo_excel_id and drive.verificar_excel_drive():
         print('')
         print('Archivo existente encontrado en Drive')
         print('Descargando para actualizar...')
         ruta_temp = drive.descargar_excel_drive()
         if ruta_temp:
-            try:
-                wb = openpyxl.load_workbook(ruta_temp)
-                excel_gen.crear_o_actualizar_hoja_mes(wb, mes_actual, anio_actual)
-                print(f'Hoja de {hoja_actual} actualizada')
-                ruta_nueva = excel_gen.guardar_excel_temporal(wb)
-            except Exception as e:
-                print(f'Error actualizando archivo: {e}')
-                import traceback
-                traceback.print_exc()
-                return False
+            wb = openpyxl.load_workbook(ruta_temp)
+            archivo_existente = True
+            hoja_ya_existia = hoja_objetivo in wb.sheetnames or mes_nombre in wb.sheetnames
 
-    if not ruta_nueva:
+    if wb is None:
         print('')
-        print('Creando nuevo archivo en Drive...')
+        print('Creando nuevo archivo Excel base...')
         wb = excel_gen.crear_excel_nuevo()
-        ruta_nueva = excel_gen.guardar_excel_temporal(wb)
+        hoja_ya_existia = hoja_objetivo in wb.sheetnames or mes_nombre in wb.sheetnames
 
-    actualizado = bool(drive.archivo_excel_id)
-    file_id = drive.subir_excel_drive(ruta_nueva, actualizar=actualizado)
+    excel_gen.crear_o_actualizar_hoja_mes(wb, mes_nombre, anio_objetivo)
+    print(f'Hoja objetivo preparada: {hoja_objetivo}')
+    ruta_nueva = excel_gen.guardar_excel_temporal(wb)
+
+    file_id = drive.subir_excel_drive(ruta_nueva, actualizar=archivo_existente)
     if not file_id:
-        print('Error: No se pudo subir el archivo a Drive')
-        return False
+        msg = 'No se pudo subir el archivo a Drive'
+        print(f'Error: {msg}')
+        return {'success': False, 'message': msg}
 
     enlace = drive.obtener_enlace_compartido()
+    ingresos_extra_total, ingresos_extra_count = _calcular_ingresos_extra_mes(excel_gen.config, clave_mes)
 
     print('')
     print('=' * 60)
@@ -346,10 +419,32 @@ def sincronizar_con_drive(config_path='config/configuracion.json'):
         print(f'Enlace para acceder: {enlace}')
     print('')
     print('El archivo se guardo en la carpeta: ControlDeGastos')
-    print(f'Con la hoja: {hoja_actual}')
+    print(f'Con la hoja: {hoja_objetivo}')
 
-    return True
+    return {
+        'success': True,
+        'message': 'Sincronizacion completada',
+        'month_mode': month_mode,
+        'hoja_objetivo': hoja_objetivo,
+        'mes_clave': clave_mes,
+        'hoja_creada': not hoja_ya_existia,
+        'archivo_existente': archivo_existente,
+        'file_id': file_id,
+        'enlace': enlace,
+        'ingresos_extra_total': ingresos_extra_total,
+        'ingresos_extra_count': ingresos_extra_count,
+    }
 
 
 if __name__ == '__main__':
-    sincronizar_con_drive()
+    import argparse
+    parser = argparse.ArgumentParser(description='Sincronizar Excel con Google Drive')
+    parser.add_argument(
+        '--month-mode',
+        default='actual',
+        help='Mes objetivo: actual, siguiente o YYYY-MM',
+    )
+    args = parser.parse_args()
+    result = sincronizar_con_drive(month_mode=args.month_mode)
+    if not result.get('success'):
+        raise SystemExit(1)

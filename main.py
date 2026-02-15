@@ -7,6 +7,7 @@ from generador_excel import GeneradorExcelGastos
 from automatizador import AutomatizadorGastos
 from bot_whatsapp import BotWhatsApp
 from google_drive import GoogleDriveManager
+from google_drive_v2 import sincronizar_con_drive as sincronizar_excel_drive
 from datetime import datetime
 
 class SistemaControlGastos:
@@ -102,6 +103,25 @@ class SistemaControlGastos:
         except Exception as e:
             print(f'\nError al iniciar el servidor web: {e}')
             print('Intenta ejecutar manualmente: python web_server.py')
+
+    def crear_y_sincronizar_hoja(self, month_mode='siguiente'):
+        """Crear/actualizar hoja mensual y sincronizar el archivo único en Drive."""
+        print('\n=== CREAR Y SINCRONIZAR HOJA MENSUAL ===')
+        print(f'Modo seleccionado: {month_mode}')
+        resultado = sincronizar_excel_drive(
+            config_path='config/configuracion.json',
+            month_mode=month_mode,
+        )
+        if resultado.get('success'):
+            hoja = resultado.get('hoja_objetivo', '(sin nombre)')
+            accion = 'creada' if resultado.get('hoja_creada') else 'actualizada'
+            print(f'\nHoja {accion}: {hoja}')
+            if resultado.get('enlace'):
+                print(f'Enlace Drive: {resultado["enlace"]}')
+            return True
+
+        print(f'\nError: {resultado.get("message", "No se pudo sincronizar con Drive")}')
+        return False
     
     def mostrar_menu_principal(self):
         print('\n' + '='*60)
@@ -113,10 +133,10 @@ class SistemaControlGastos:
         print('1. Crear Excel inicial')
         print('2. Abrir bot de gastos (modo consola)')
         print('3. Abrir interfaz web (configuración visual)')
-        print('4. Crear hoja del mes siguiente')
+        print('4. Crear/sincronizar hoja mensual (actual o siguiente)')
         print('5. Iniciar automatización programada')
         print('6. Configurar Google Drive')
-        print('7. Sincronizar con Drive')
+        print('7. Sincronizar hoja del mes actual con Drive')
         print('8. Crear backup en Drive')
         print('9. Cambiar sueldo mensual')
         print('10. Actualizar gasto fijo')
@@ -141,7 +161,9 @@ class SistemaControlGastos:
                     self.abrir_interfaz_web()
                 
                 elif opcion == '4':
-                    self.automatizador.crear_nueva_hoja_mensual()
+                    modo = input('Selecciona mes [1=actual, 2=siguiente] (default 2): ').strip()
+                    month_mode = 'actual' if modo == '1' else 'siguiente'
+                    self.crear_y_sincronizar_hoja(month_mode)
                 
                 elif opcion == '5':
                     print('Iniciando servicio de automatización...')
@@ -152,8 +174,7 @@ class SistemaControlGastos:
                     self.configurar_google_drive()
                 
                 elif opcion == '7':
-                    if self.drive.autenticar():
-                        self.drive.sincronizar_archivo_mes()
+                    self.crear_y_sincronizar_hoja('actual')
                 
                 elif opcion == '8':
                     if self.drive.autenticar():

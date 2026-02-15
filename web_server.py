@@ -1,6 +1,6 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """
-Servidor web para la interfaz de configuraciÃ³n del Control de Gastos
+Servidor web para la interfaz de configuración del Control de Gastos
 """
 
 import http.server
@@ -17,6 +17,7 @@ WEB_DIR = Path(__file__).parent / "web"
 CONFIG_FILE = Path(__file__).parent / "config" / "configuracion.json"
 BOT_INSTANCE = None
 BOT_LOCK = threading.Lock()
+MOJIBAKE_MARKERS = ("\u00C3", "\u00C2", "\u00E2")
 
 
 def get_bot_instance():
@@ -32,6 +33,33 @@ def get_bot_instance():
 
     BOT_INSTANCE = BotWhatsApp()
     return BOT_INSTANCE
+
+
+def fix_mojibake_text(value: str) -> str:
+    """Repair common mojibake patterns (UTF-8 text misread as Latin-1)."""
+    if not isinstance(value, str):
+        return value
+    if not any(marker in value for marker in MOJIBAKE_MARKERS):
+        return value
+    try:
+        return value.encode("latin-1").decode("utf-8")
+    except UnicodeError:
+        return value
+
+
+def normalize_text_encoding(data):
+    """Recursively normalize mojibake in dict/list/string payloads."""
+    if isinstance(data, dict):
+        fixed = {}
+        for k, v in data.items():
+            fixed_key = fix_mojibake_text(k) if isinstance(k, str) else k
+            fixed[fixed_key] = normalize_text_encoding(v)
+        return fixed
+    if isinstance(data, list):
+        return [normalize_text_encoding(item) for item in data]
+    if isinstance(data, str):
+        return fix_mojibake_text(data)
+    return data
 
 class CustomHandler(http.server.SimpleHTTPRequestHandler):
     """Handler personalizado para servir archivos y manejar API"""
@@ -74,17 +102,17 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
     
     def serve_config(self):
-        """Servir el archivo de configuraciÃ³n"""
+        """Servir el archivo de configuración"""
         try:
             # Si el archivo no existe, crear uno por defecto
             if not CONFIG_FILE.exists():
-                print(f"Archivo de configuraciÃ³n no encontrado en {CONFIG_FILE}")
-                print("Creando configuraciÃ³n por defecto...")
+                print(f"Archivo de configuración no encontrado en {CONFIG_FILE}")
+                print("Creando configuración por defecto...")
                 
                 # Crear directorio config si no existe
                 CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
                 
-                # ConfiguraciÃ³n por defecto
+                # Configuración por defecto
                 default_config = {
                     "usuario": {"nombre": ""},
                     "sueldo": {"valor_fijo": 4600000, "moneda": "COP"},
@@ -102,15 +130,15 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
                     },
                     "gastos_fijos": {
                         "arriendo": {"valor": 0, "dia_cargo": 1, "categoria": "Vivienda"},
-                        "mercado_primera_quincena": {"valor": 0, "dia_cargo": 15, "categoria": "AlimentaciÃ³n"},
-                        "mercado_segunda_quincena": {"valor": 0, "dia_cargo": 30, "categoria": "AlimentaciÃ³n"},
+                        "mercado_primera_quincena": {"valor": 0, "dia_cargo": 15, "categoria": "Alimentación"},
+                        "mercado_segunda_quincena": {"valor": 0, "dia_cargo": 30, "categoria": "Alimentación"},
                         "servicio_gas": {"valor": 0, "dia_cargo": 10, "categoria": "Servicios"},
                         "descuento_quincenal": {"valor": 5000, "frecuencia": "quincenal", "categoria": "Descuentos"},
                         "gimnasio": {"valor": 0, "dia_cargo": 1, "categoria": "Salud/Bienestar"},
                         "netflix": {"valor": 0, "dia_cargo": 5, "categoria": "Entretenimiento"},
                         "movistar": {"valor": 0, "dia_cargo": 10, "categoria": "Servicios"},
                         "youtube_premium": {"valor": 0, "dia_cargo": 5, "categoria": "Entretenimiento"},
-                        "google_drive": {"valor": 0, "dia_cargo": 1, "categoria": "TecnologÃ­a"},
+                        "google_drive": {"valor": 0, "dia_cargo": 1, "categoria": "Tecnología"},
                         "gamepass": {"valor": 0, "dia_cargo": 15, "categoria": "Entretenimiento"},
                         "mercadolibre": {"valor": 0, "dia_cargo": 1, "categoria": "Compras"}
                     },
@@ -128,22 +156,26 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
                         ],
                         "actualizado_en": None
                     },
-                    "categorias_gastos": ["Vivienda", "AlimentaciÃ³n", "Servicios", "Transporte", "Salud/Bienestar", "Entretenimiento", "TecnologÃ­a", "Compras", "EducaciÃ³n", "Otros", "Descuentos"],
+                    "categorias_gastos": ["Vivienda", "Alimentación", "Servicios", "Transporte", "Salud/Bienestar", "Entretenimiento", "Tecnología", "Compras", "Educación", "Otros", "Descuentos"],
                     "google_drive": {"archivo_excel_id": "", "carpeta_backup_id": ""},
                     "whatsapp": {"numero_bot": "", "numero_usuario": ""},
                     "automatizacion": {"hora_creacion_hoja": "00:01", "formato_fecha": "YYYY-MM-DD"}
                 }
                 
-                # Guardar configuraciÃ³n por defecto
+                # Guardar configuración por defecto
                 with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
                     json.dump(default_config, f, indent=2, ensure_ascii=False)
                 
                 config = default_config
-                print(f"ConfiguraciÃ³n por defecto creada en: {CONFIG_FILE}")
+                print(f"Configuración por defecto creada en: {CONFIG_FILE}")
             else:
-                # Cargar configuraciÃ³n existente
+                # Cargar configuración existente
                 with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
                     config = json.load(f)
+
+            fixed_config = normalize_text_encoding(config)
+            config_was_fixed = fixed_config != config
+            config = fixed_config
             
             # Compatibilidad: agregar claves nuevas si no existen
             if 'presupuesto_variables' not in config:
@@ -192,17 +224,21 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
                     'gasto:sub_facebook_don_j'
                 ]
 
+            if config_was_fixed:
+                with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
+                    json.dump(config, f, indent=2, ensure_ascii=False)
+
             self.send_response(200)
-            self.send_header('Content-type', 'application/json')
+            self.send_header('Content-type', 'application/json; charset=utf-8')
             self.end_headers()
-            self.wfile.write(json.dumps(config).encode())
+            self.wfile.write(json.dumps(config, ensure_ascii=False).encode('utf-8'))
             
         except Exception as e:
-            print(f"Error sirviendo configuraciÃ³n: {e}")
+            print(f"Error sirviendo configuración: {e}")
             self.send_error(500, str(e))
     
     def save_config(self):
-        """Guardar el archivo de configuraciÃ³n"""
+        """Guardar el archivo de configuración"""
         try:
             content_length = int(self.headers['Content-Length'])
             post_data = self.rfile.read(content_length)
@@ -211,29 +247,29 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
             # Crear directorio config si no existe
             CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
             
-            # Guardar configuraciÃ³n
+            # Guardar configuración
             with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
                 json.dump(config, f, indent=2, ensure_ascii=False)
             
-            print(f"ConfiguraciÃ³n guardada exitosamente en: {CONFIG_FILE}")
+            print(f"Configuración guardada exitosamente en: {CONFIG_FILE}")
             
             self.send_response(200)
-            self.send_header('Content-type', 'application/json')
+            self.send_header('Content-type', 'application/json; charset=utf-8')
             self.end_headers()
-            self.wfile.write(json.dumps({'status': 'ok', 'message': 'ConfiguraciÃ³n guardada'}).encode())
+            self.wfile.write(json.dumps({'status': 'ok', 'message': 'Configuración guardada'}, ensure_ascii=False).encode('utf-8'))
         except Exception as e:
-            print(f"Error guardando configuraciÃ³n: {e}")
+            print(f"Error guardando configuración: {e}")
             self.send_error(500, str(e))
     
     def serve_docs(self):
-        """Servir archivos de documentaciÃ³n Markdown"""
+        """Servir archivos de documentación Markdown"""
         try:
             # Extraer el nombre del archivo de la URL
             archivo = self.path.replace('/api/docs/', '')
             docs_dir = Path(__file__).parent / "docs"
             archivo_path = docs_dir / archivo
             
-            # Verificar que el archivo existe y estÃ¡ en el directorio docs
+            # Verificar que el archivo existe y está en el directorio docs
             if not archivo_path.exists() or not str(archivo_path).startswith(str(docs_dir)):
                 self.send_error(404, "Documento no encontrado")
                 return
@@ -248,7 +284,7 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(contenido.encode('utf-8'))
             
         except Exception as e:
-            print(f"Error sirviendo documentaciÃ³n: {e}")
+            print(f"Error sirviendo documentación: {e}")
             self.send_error(500, str(e))
 
     def bot_health(self):
@@ -256,7 +292,7 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
         try:
             get_bot_instance()
             self.send_response(200)
-            self.send_header('Content-type', 'application/json')
+            self.send_header('Content-type', 'application/json; charset=utf-8')
             self.end_headers()
             self.wfile.write(json.dumps({
                 'success': True,
@@ -265,7 +301,7 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
             }, ensure_ascii=False).encode('utf-8'))
         except Exception as e:
             self.send_response(500)
-            self.send_header('Content-type', 'application/json')
+            self.send_header('Content-type', 'application/json; charset=utf-8')
             self.end_headers()
             self.wfile.write(json.dumps({
                 'success': False,
@@ -279,7 +315,7 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
             content_length = int(self.headers.get('Content-Length', '0'))
             if content_length <= 0:
                 self.send_response(400)
-                self.send_header('Content-type', 'application/json')
+                self.send_header('Content-type', 'application/json; charset=utf-8')
                 self.end_headers()
                 self.wfile.write(json.dumps({
                     'success': False,
@@ -297,7 +333,7 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
 
             if not mensaje:
                 self.send_response(400)
-                self.send_header('Content-type', 'application/json')
+                self.send_header('Content-type', 'application/json; charset=utf-8')
                 self.end_headers()
                 self.wfile.write(json.dumps({
                     'success': False,
@@ -310,7 +346,7 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
                 respuesta = bot.procesar_entrada(mensaje, numero_remitente=numero_remitente)
 
             self.send_response(200)
-            self.send_header('Content-type', 'application/json')
+            self.send_header('Content-type', 'application/json; charset=utf-8')
             self.end_headers()
             self.wfile.write(json.dumps({
                 'success': True,
@@ -320,7 +356,7 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
 
         except json.JSONDecodeError:
             self.send_response(400)
-            self.send_header('Content-type', 'application/json')
+            self.send_header('Content-type', 'application/json; charset=utf-8')
             self.end_headers()
             self.wfile.write(json.dumps({
                 'success': False,
@@ -331,7 +367,7 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
             import traceback
             traceback.print_exc()
             self.send_response(500)
-            self.send_header('Content-type', 'application/json')
+            self.send_header('Content-type', 'application/json; charset=utf-8')
             self.end_headers()
             self.wfile.write(json.dumps({
                 'success': False,
@@ -351,136 +387,55 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
 
 
     def sync_drive(self):
-        """Sincronizar Excel con Google Drive"""
+        """Crear/actualizar hoja mensual (actual o siguiente) y sincronizar con Drive."""
         try:
-            import sys
-            import os
-            
-            # Agregar src al path
+            content_length = int(self.headers.get('Content-Length', '0') or 0)
+            month_mode = 'actual'
+
+            if content_length > 0:
+                raw_body = self.rfile.read(content_length)
+                if raw_body:
+                    payload = json.loads(raw_body.decode('utf-8'))
+                    if isinstance(payload, dict):
+                        month_mode = str(payload.get('month_mode', 'actual')).strip() or 'actual'
+
             src_path = os.path.join(os.path.dirname(__file__), 'src')
             if src_path not in sys.path:
                 sys.path.insert(0, src_path)
-            
-            # Importar mÃ³dulos necesarios
-            from excel_mensual import GeneradorExcelMensual
-            from google_drive_v2 import GoogleDriveManager
-            import openpyxl
-            
-            print("Iniciando sincronizaciÃ³n con Drive...")
-            
-            # Inicializar managers
-            generador = GeneradorExcelMensual(str(CONFIG_FILE))
-            drive = GoogleDriveManager(str(CONFIG_FILE))
-            
-            # Autenticar con Drive
-            if not drive.autenticar():
-                raise Exception("No se pudo autenticar con Google Drive")
-            
-            # Crear/obtener carpeta
-            carpeta_id = drive.crear_o_obtener_carpeta()
-            if not carpeta_id:
-                raise Exception("No se pudo crear/obtener la carpeta en Drive")
-            
-            # Determinar mes actual
-            from datetime import datetime
-            meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-                    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
-            mes_actual = meses[datetime.now().month - 1]
-            anio_actual = datetime.now().year
-            hoja_actual = f'{mes_actual} {anio_actual}'
-            clave_mes_actual = f'{anio_actual:04d}-{datetime.now().month:02d}'
 
-            # Calcular ingresos extra del mes para confirmacion al usuario.
-            historial = generador.config.get('historial_saldos', {})
-            registro_mes = {}
-            if isinstance(historial, dict):
-                saldos_mensuales = historial.get('saldos_mensuales', {})
-                if isinstance(saldos_mensuales, dict):
-                    registro_mes = saldos_mensuales.get(clave_mes_actual, {}) or {}
-                if not registro_mes and isinstance(historial.get(clave_mes_actual), dict):
-                    registro_mes = historial.get(clave_mes_actual, {})
-            ingresos_extra_raw = registro_mes.get('ingresos_extra', []) if isinstance(registro_mes, dict) else []
-            ingresos_extra_total = 0.0
-            ingresos_extra_count = 0
-            if isinstance(ingresos_extra_raw, list):
-                for item in ingresos_extra_raw:
-                    if not isinstance(item, dict):
-                        continue
-                    try:
-                        valor = float(item.get('valor', 0) or 0)
-                    except Exception:
-                        valor = 0.0
-                    if valor > 0:
-                        ingresos_extra_total += valor
-                        ingresos_extra_count += 1
-            
-            # Verificar si existe archivo en Drive
-            ruta_temp = None
-            if drive.archivo_excel_id and drive.verificar_excel_drive():
-                print(f'Archivo existente encontrado. Descargando...')
-                ruta_temp = drive.descargar_excel_drive()
-                
-                if ruta_temp:
-                    try:
-                        # Abrir workbook existente
-                        wb = openpyxl.load_workbook(ruta_temp)
-                        
-                        # Crear/actualizar hoja del mes sin borrar registros previos
-                        generador.crear_o_actualizar_hoja_mes(wb, mes_actual, anio_actual)
-                        print(f'Hoja de {hoja_actual} actualizada')
-                        
-                        # Guardar temporalmente
-                        ruta_nueva = generador.guardar_excel_temporal(wb)
-                        
-                    except Exception as e:
-                        print(f'Error actualizando archivo: {e}')
-                        import traceback
-                        traceback.print_exc()
-                        ruta_temp = None
-            
-            if not ruta_temp:
-                # Crear nuevo Excel
-                print('Creando nuevo archivo Excel...')
-                wb = generador.crear_excel_nuevo()
-                ruta_nueva = generador.guardar_excel_temporal(wb)
-            
-            # Subir a Drive
-            print('Subiendo archivo a Google Drive...')
-            file_id = drive.subir_excel_drive(ruta_nueva, actualizar=(drive.archivo_excel_id != ''))
-            
-            if not file_id:
-                raise Exception("No se pudo subir el archivo a Drive")
-            
-            # Obtener enlace compartido
-            enlace = drive.obtener_enlace_compartido()
-            
-            print("SincronizaciÃ³n completada exitosamente!")
-            
-            # Responder Ã©xito
-            self.send_response(200)
-            self.send_header('Content-type', 'application/json')
+            try:
+                from google_drive_v2 import sincronizar_con_drive
+            except ModuleNotFoundError:
+                from src.google_drive_v2 import sincronizar_con_drive
+
+            print(f"Iniciando sincronización con Drive (month_mode={month_mode})...")
+            result = sincronizar_con_drive(config_path=str(CONFIG_FILE), month_mode=month_mode)
+
+            status_code = 200 if result.get('success') else 500
+            self.send_response(status_code)
+            self.send_header('Content-type', 'application/json; charset=utf-8')
+            self.end_headers()
+            self.wfile.write(json.dumps(result, ensure_ascii=False).encode('utf-8'))
+
+        except json.JSONDecodeError:
+            self.send_response(400)
+            self.send_header('Content-type', 'application/json; charset=utf-8')
             self.end_headers()
             self.wfile.write(json.dumps({
-                'success': True,
-                'message': 'SincronizaciÃ³n completada',
-                'enlace': enlace,
-                'hoja_actual': hoja_actual,
-                'ingresos_extra_total': ingresos_extra_total,
-                'ingresos_extra_count': ingresos_extra_count
-            }).encode())
-                
+                'success': False,
+                'message': 'JSON inválido en el body.'
+            }, ensure_ascii=False).encode('utf-8'))
         except Exception as e:
-            print(f"Error en sincronizaciÃ³n: {e}")
+            print(f"Error en sincronización: {e}")
             import traceback
             traceback.print_exc()
-            
             self.send_response(500)
-            self.send_header('Content-type', 'application/json')
+            self.send_header('Content-type', 'application/json; charset=utf-8')
             self.end_headers()
             self.wfile.write(json.dumps({
                 'success': False,
                 'message': str(e)
-            }).encode())
+            }, ensure_ascii=False).encode('utf-8'))
 
 
 class ThreadingTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
@@ -495,10 +450,10 @@ def start_server(port=PORT, open_browser=False):
     # Verificar que existe el directorio web
     if not WEB_DIR.exists():
         print(f"Error: No se encuentra el directorio {WEB_DIR}")
-        print("AsegÃºrate de estar en el directorio correcto del proyecto.")
+        print("Asegúrate de estar en el directorio correcto del proyecto.")
         return False
     
-    # Intentar usar el puerto especificado, si estÃ¡ ocupado buscar otro
+    # Intentar usar el puerto especificado, si está ocupado buscar otro
     while True:
         try:
             with ThreadingTCPServer(("", port), CustomHandler) as httpd:
@@ -523,12 +478,12 @@ def start_server(port=PORT, open_browser=False):
                 raise
 
 def main():
-    """FunciÃ³n principal"""
+    """Función principal"""
     import argparse
     
     parser = argparse.ArgumentParser(description='Servidor web para Control de Gastos')
     parser.add_argument('--port', '-p', type=int, default=PORT, help=f'Puerto (default: {PORT})')
-    parser.add_argument('--no-browser', action='store_true', help='No abrir navegador automÃ¡ticamente')
+    parser.add_argument('--no-browser', action='store_true', help='No abrir navegador automáticamente')
     
     args = parser.parse_args()
     
@@ -540,5 +495,6 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 
 

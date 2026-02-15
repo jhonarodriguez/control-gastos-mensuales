@@ -19,7 +19,7 @@
             // Intentar cargar desde el endpoint del servidor
             const response = await fetch('/api/config');
             if (!response.ok) {
-                throw new Error('No se pudo cargar la configuraciÃ³n');
+                throw new Error('No se pudo cargar la configuración');
             }
             this.config = await response.json();
             this.config.presupuesto_variables = this.config.presupuesto_variables || 0;
@@ -38,11 +38,11 @@
             this.config.historial_saldos.saldos_mensuales = this.config.historial_saldos.saldos_mensuales || {};
             this.migrarHistorialMensualLegacy();
             this._normalizarFlujosEfectivo();
-            console.log('ConfiguraciÃ³n cargada:', this.config);
+            console.log('Configuración cargada:', this.config);
         } catch (error) {
-            console.error('Error cargando configuraciÃ³n:', error);
-            this.showToast('Usando configuraciÃ³n por defecto', 'warning');
-            // ConfiguraciÃ³n por defecto
+            console.error('Error cargando configuración:', error);
+            this.showToast('Usando configuración por defecto', 'warning');
+            // Configuración por defecto
             this.config = this.getDefaultConfig();
         }
     }
@@ -69,7 +69,7 @@
                 ],
                 actualizado_en: null
             },
-            categorias_gastos: ['Vivienda', 'AlimentaciÃ³n', 'Servicios', 'Transporte', 'Salud/Bienestar', 'Entretenimiento', 'TecnologÃ­a', 'Compras', 'EducaciÃ³n', 'Otros', 'Descuentos'],
+            categorias_gastos: ['Vivienda', 'Alimentación', 'Servicios', 'Transporte', 'Salud/Bienestar', 'Entretenimiento', 'Tecnología', 'Compras', 'Educación', 'Otros', 'Descuentos'],
             google_drive: { archivo_excel_id: '', carpeta_backup_id: '' },
             whatsapp: { numero_bot: '', numero_usuario: '' },
             automatizacion: { hora_creacion_hoja: '00:01', formato_fecha: 'YYYY-MM-DD' }
@@ -77,7 +77,7 @@
     }
 
     setupEventListeners() {
-        // NavegaciÃ³n del sidebar
+        // Navegación del sidebar
         document.querySelectorAll('.sidebar-menu li').forEach(item => {
             item.addEventListener('click', () => {
                 const section = item.dataset.section;
@@ -85,12 +85,12 @@
             });
         });
 
-        // BotÃ³n guardar todo
+        // Botón guardar todo
         document.getElementById('btn-guardar-todo').addEventListener('click', () => {
             this.saveConfig();
         });
 
-        // SecciÃ³n Sueldo
+        // Sección Sueldo
         document.getElementById('btn-guardar-sueldo').addEventListener('click', () => {
             this.guardarSueldo();
         });
@@ -126,7 +126,7 @@
             });
         }
 
-        // SecciÃ³n Gastos Fijos
+        // Sección Gastos Fijos
         document.getElementById('btn-agregar-gasto').addEventListener('click', () => {
             this.abrirModalGasto();
         });
@@ -161,7 +161,7 @@
             });
         }
 
-        // SecciÃ³n CategorÃ­as
+        // Sección Categorías
         document.getElementById('btn-agregar-categoria').addEventListener('click', () => {
             this.abrirModalCategoria();
         });
@@ -170,7 +170,7 @@
             this.guardarCategoria();
         });
 
-        // SecciÃ³n Excel
+        // Sección Excel
         document.getElementById('btn-excel-actual').addEventListener('click', () => {
             this.generarExcel('actual');
         });
@@ -179,7 +179,7 @@
             this.generarExcel('siguiente');
         });
 
-        // SecciÃ³n Drive
+        // Sección Drive
         document.getElementById('btn-configurar-drive').addEventListener('click', () => {
             this.configurarDrive();
         });
@@ -192,17 +192,17 @@
             this.crearBackup();
         });
 
-        // SecciÃ³n Saldo Bancario
+        // Sección Saldo Bancario
         document.getElementById('btn-actualizar-saldo').addEventListener('click', () => {
             this.actualizarSaldoBancario();
         });
 
-        // BotÃ³n de sincronizaciÃ³n general en el header
+        // Botón de sincronización general en el header
         document.getElementById('btn-sync-general').addEventListener('click', () => {
             this.sincronizarTodo();
         });
 
-        // BotÃ³n ayuda
+        // Botón ayuda
         document.getElementById('btn-ayuda').addEventListener('click', () => {
             this.mostrarAyuda();
         });
@@ -225,13 +225,13 @@
     }
 
     switchSection(section) {
-        // Actualizar menÃº activo
+        // Actualizar menú activo
         document.querySelectorAll('.sidebar-menu li').forEach(item => {
             item.classList.remove('active');
         });
         document.querySelector(`[data-section="${section}"]`).classList.add('active');
 
-        // Actualizar tÃ­tulo
+        // Actualizar título
         const titulos = {
             'dashboard': 'Dashboard',
             'sueldo': 'Configurar Sueldo',
@@ -239,15 +239,15 @@
             'gastos-fijos': 'Gastos Fijos',
             'deudas': 'Deudas Mensuales',
             'flujos-efectivo': 'Retiros y Recarga MOVII',
-            'categorias': 'CategorÃ­as',
+            'categorias': 'Categorías',
             'excel': 'Generar Excel',
             'drive': 'Google Drive',
             'logs': 'Historial',
-            'documentacion': 'DocumentaciÃ³n'
+            'documentacion': 'Documentación'
         };
         document.getElementById('page-title').textContent = titulos[section] || 'Dashboard';
 
-        // Mostrar secciÃ³n
+        // Mostrar sección
         document.querySelectorAll('.section').forEach(sec => {
             sec.classList.remove('active');
         });
@@ -282,12 +282,15 @@
         const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
                        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
         const hoy = new Date();
-        const mesActual = meses[hoy.getMonth()];
-        const mesSiguiente = meses[(hoy.getMonth() + 1) % 12];
-        const anio = hoy.getFullYear();
+        const mesActualDate = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+        const mesSiguienteDate = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 1);
+        const mesActual = meses[mesActualDate.getMonth()];
+        const mesSiguiente = meses[mesSiguienteDate.getMonth()];
+        const anioActual = mesActualDate.getFullYear();
+        const anioSiguiente = mesSiguienteDate.getFullYear();
         
-        document.getElementById('mes-actual').textContent = `${mesActual} ${anio}`;
-        document.getElementById('mes-siguiente').textContent = `${mesSiguiente} ${anio}`;
+        document.getElementById('mes-actual').textContent = `${mesActual} ${anioActual}`;
+        document.getElementById('mes-siguiente').textContent = `${mesSiguiente} ${anioSiguiente}`;
 
         // Verificar estado de Drive
         this.verificarDrive();
@@ -351,7 +354,7 @@
                 'Actualizado: ' + fecha.toLocaleDateString() + ' ' + fecha.toLocaleTimeString();
         }
 
-        // Renderizar prÃ³ximos pagos
+        // Renderizar próximos pagos
         this.renderProximosPagos();
     }
 
@@ -399,7 +402,7 @@
             : 0;
         document.getElementById('porcentaje-gastos').textContent = `${porcentaje}%`;
 
-        // Actualizar select de categorÃ­as en modal
+        // Actualizar select de categorías en modal
         this.actualizarSelectCategorias();
         this.renderFlujosEfectivo();
     }
@@ -794,11 +797,11 @@
         const deudas = Object.entries(this.config.deudas_fijas || {}).map(([k, v]) => [k, v, 'Deuda']);
         const items = [...gastos, ...deudas];
         if (items.length === 0) {
-            container.innerHTML = '<p class="empty-state">Configura tus gastos fijos para ver los prÃ³ximos pagos</p>';
+            container.innerHTML = '<p class="empty-state">Configura tus gastos fijos para ver los próximos pagos</p>';
             return;
         }
 
-        // Ordenar por dÃ­a
+        // Ordenar por día
         const gastosOrdenados = items.sort((a, b) => {
             const diaA = a[1].dia_cargo || 1;
             const diaB = b[1].dia_cargo || 1;
@@ -822,10 +825,10 @@
     renderLogs() {
         const container = document.getElementById('logs-container');
         
-        // Simular logs (en producciÃ³n vendrÃ­an de un archivo)
+        // Simular logs (en producción vendrían de un archivo)
         const logs = [
             { time: new Date().toLocaleString(), message: 'Sistema iniciado correctamente', type: 'info' },
-            { time: new Date().toLocaleString(), message: 'ConfiguraciÃ³n cargada', type: 'success' }
+            { time: new Date().toLocaleString(), message: 'Configuración cargada', type: 'success' }
         ];
 
         container.innerHTML = '';
@@ -912,7 +915,7 @@
 
     formatFechaGasto(gasto) {
         if (gasto.dia_cargo) {
-            return `DÃ­a ${gasto.dia_cargo}`;
+            return `Día ${gasto.dia_cargo}`;
         } else if (gasto.frecuencia) {
             return gasto.frecuencia.charAt(0).toUpperCase() + gasto.frecuencia.slice(1);
         }
@@ -1000,7 +1003,7 @@
     }
 
     eliminarGasto(key) {
-        if (confirm('Â¿EstÃ¡s seguro de que deseas eliminar este gasto?')) {
+        if (confirm('¿Estás seguro de que deseas eliminar este gasto?')) {
             delete this.config.gastos_fijos[key];
             this.renderGastosFijos();
             this.updateDashboard();
@@ -1096,7 +1099,7 @@
     }
 
     eliminarDeuda(key) {
-        if (confirm('Â¿EstÃ¡s seguro de que deseas eliminar esta deuda?')) {
+        if (confirm('¿Estás seguro de que deseas eliminar esta deuda?')) {
             delete this.config.deudas_fijas[key];
             this.renderDeudas();
             this.updateDashboard();
@@ -1137,37 +1140,37 @@
         const nombre = document.getElementById('categoria-nombre').value.trim();
 
         if (!nombre) {
-            this.showToast('Por favor ingresa un nombre para la categorÃ­a', 'error');
+            this.showToast('Por favor ingresa un nombre para la categoría', 'error');
             return;
         }
 
         if (this.config.categorias_gastos.includes(nombre)) {
-            this.showToast('Esta categorÃ­a ya existe', 'error');
+            this.showToast('Esta categoría ya existe', 'error');
             return;
         }
 
         this.config.categorias_gastos.push(nombre);
         this.cerrarModales();
         this.renderCategorias();
-        this.showToast('CategorÃ­a agregada correctamente', 'success');
+        this.showToast('Categoría agregada correctamente', 'success');
     }
 
     editarCategoria(index) {
         const categoria = this.config.categorias_gastos[index];
-        const nuevoNombre = prompt('Editar nombre de la categorÃ­a:', categoria);
+        const nuevoNombre = prompt('Editar nombre de la categoría:', categoria);
         
         if (nuevoNombre && nuevoNombre.trim() !== '') {
             this.config.categorias_gastos[index] = nuevoNombre.trim();
             this.renderCategorias();
-            this.showToast('CategorÃ­a actualizada', 'success');
+            this.showToast('Categoría actualizada', 'success');
         }
     }
 
     eliminarCategoria(index) {
-        if (confirm('Â¿EstÃ¡s seguro de que deseas eliminar esta categorÃ­a?')) {
+        if (confirm('¿Estás seguro de que deseas eliminar esta categoría?')) {
             this.config.categorias_gastos.splice(index, 1);
             this.renderCategorias();
-            this.showToast('CategorÃ­a eliminada', 'success');
+            this.showToast('Categoría eliminada', 'success');
         }
     }
 
@@ -1210,14 +1213,14 @@
             
             if (result.status === 'ok') {
                 if (showSuccessToast) {
-                    this.showToast('ConfiguraciÃ³n guardada correctamente', 'success');
+                    this.showToast('Configuración guardada correctamente', 'success');
                 }
                 return true;
             } else {
-                throw new Error('Respuesta del servidor no vÃ¡lida');
+                throw new Error('Respuesta del servidor no válida');
             }
         } catch (error) {
-            console.error('Error guardando configuraciÃ³n:', error);
+            console.error('Error guardando configuración:', error);
             this.showToast('Error al guardar. Descargando archivo manualmente...', 'warning');
             
             // Fallback: descargar el archivo manualmente
@@ -1232,19 +1235,54 @@
                 
                 this.showToast('Archivo descargado. Reemplaza el archivo en config/', 'info');
             } catch (downloadError) {
-                this.showToast('Error al guardar la configuraciÃ³n', 'error');
+                this.showToast('Error al guardar la configuración', 'error');
             }
             return false;
         }
     }
 
-    generarExcel(tipo) {
-        this.showToast(`Generando Excel para el ${tipo === 'actual' ? 'mes actual' : 'mes siguiente'}...`, 'info');
-        
-        // En un entorno real, esto llamarÃ­a al backend
-        setTimeout(() => {
-            this.showToast('Excel generado correctamente. Revisa la carpeta excel_templates/', 'success');
-        }, 1500);
+    async generarExcel(tipo) {
+        const monthMode = tipo === 'siguiente' ? 'siguiente' : 'actual';
+        this.showToast(
+            `Creando hoja del ${monthMode === 'actual' ? 'mes actual' : 'mes siguiente'} y sincronizando...`,
+            'info'
+        );
+
+        try {
+            const guardadoOk = await this.saveConfig(false);
+            if (!guardadoOk) {
+                throw new Error('No se pudo guardar la configuracion antes de sincronizar');
+            }
+
+            const response = await fetch('/api/sync-drive', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ month_mode: monthMode }),
+            });
+
+            const result = await response.json();
+            if (!response.ok || !result.success) {
+                throw new Error(result.message || 'No se pudo crear/sincronizar la hoja');
+            }
+
+            const hoja = result.hoja_objetivo || 'hoja mensual';
+            const accion = result.hoja_creada ? 'creada' : 'actualizada';
+            this.showToast(`Hoja ${accion}: ${hoja}`, 'success');
+
+            if (result.enlace) {
+                const abrir = confirm(
+                    `Sincronizacion exitosa para "${hoja}". ¿Deseas abrir el archivo en Google Drive?`
+                );
+                if (abrir) {
+                    window.open(result.enlace, '_blank');
+                }
+            }
+        } catch (error) {
+            console.error('Error creando/sincronizando hoja:', error);
+            this.showToast(`Error: ${error.message}`, 'error');
+        }
     }
 
     verificarDrive() {
@@ -1258,11 +1296,8 @@
         this.showToast('Para configurar Google Drive, sigue las instrucciones en docs/INSTALACION.md', 'info');
     }
 
-    sincronizarDrive() {
-        this.showToast('Sincronizando con Google Drive...', 'info');
-        setTimeout(() => {
-            this.showToast('SincronizaciÃ³n completada', 'success');
-        }, 1500);
+    async sincronizarDrive() {
+        await this.generarExcel('actual');
     }
 
     crearBackup() {
@@ -1277,20 +1312,20 @@
 
 1. Configura tu sueldo en "Mi Sueldo"
 2. Agrega tus gastos fijos en "Gastos Fijos"
-3. Personaliza las categorÃ­as si lo necesitas
+3. Personaliza las categorías si lo necesitas
 4. Genera tu Excel desde "Generar Excel"
-5. Configura Google Drive para sincronizaciÃ³n
+5. Configura Google Drive para sincronización
 
 TIPS:
 - Los cambios se guardan al hacer clic en "Guardar Cambios"
-- Puedes agregar, editar o eliminar gastos y categorÃ­as
+- Puedes agregar, editar o eliminar gastos y categorías
 - El dashboard muestra un resumen en tiempo real
-- Los prÃ³ximos pagos se ordenan por fecha
+- Los próximos pagos se ordenan por fecha
 
-Para mÃ¡s informaciÃ³n, revisa la documentaciÃ³n en docs/`);
+Para más información, revisa la documentación en docs/`);
     }
 
-    // Funciones de DocumentaciÃ³n
+    // Funciones de Documentación
     async cargarDocumentacion(archivo) {
         try {
             const response = await fetch(`/api/docs/${archivo}`);
@@ -1299,7 +1334,7 @@ Para mÃ¡s informaciÃ³n, revisa la documentaciÃ³n en docs/`);
             }
             const contenido = await response.text();
             
-            // Convertir Markdown a HTML bÃ¡sico
+            // Convertir Markdown a HTML básico
             const html = this.markdownToHtml(contenido);
             
             // Mostrar el documento
@@ -1311,7 +1346,7 @@ Para mÃ¡s informaciÃ³n, revisa la documentaciÃ³n en docs/`);
             document.getElementById('doc-visor-card').scrollIntoView({ behavior: 'smooth' });
             
         } catch (error) {
-            console.error('Error cargando documentaciÃ³n:', error);
+            console.error('Error cargando documentación:', error);
             this.showToast('Error al cargar el documento', 'error');
             
             // Cargar contenido de ejemplo si falla
@@ -1322,37 +1357,37 @@ Para mÃ¡s informaciÃ³n, revisa la documentaciÃ³n en docs/`);
     cargarDocumentoEjemplo(archivo) {
         const documentos = {
             'DOCUMENTACION.md': `
-                <h1>DocumentaciÃ³n Completa</h1>
-                <p>Esta es la documentaciÃ³n tÃ©cnica completa del sistema de control de gastos.</p>
-                <h2>CaracterÃ­sticas</h2>
+                <h1>Documentación Completa</h1>
+                <p>Esta es la documentación técnica completa del sistema de control de gastos.</p>
+                <h2>Características</h2>
                 <ul>
-                    <li>Excel profesional con fÃ³rmulas automÃ¡ticas</li>
+                    <li>Excel profesional con fórmulas automáticas</li>
                     <li>Registro de gastos mediante chat</li>
-                    <li>AutomatizaciÃ³n mensual</li>
-                    <li>IntegraciÃ³n con Google Drive</li>
+                    <li>Automatización mensual</li>
+                    <li>Integración con Google Drive</li>
                 </ul>
-                <p>Para mÃ¡s detalles, revisa los otros documentos.</p>
+                <p>Para más detalles, revisa los otros documentos.</p>
             `,
             'INSTALACION.md': `
-                <h1>GuÃ­a de InstalaciÃ³n</h1>
+                <h1>Guía de Instalación</h1>
                 <h2>Paso 1: Requisitos</h2>
                 <p>Necesitas Python 3.8 o superior instalado.</p>
-                <h2>Paso 2: InstalaciÃ³n</h2>
+                <h2>Paso 2: Instalación</h2>
                 <pre><code>pip install -r requirements.txt</code></pre>
-                <h2>Paso 3: ConfiguraciÃ³n</h2>
+                <h2>Paso 3: Configuración</h2>
                 <p>Usa esta interfaz web o edita config/configuracion.json</p>
             `,
             'EJEMPLOS.md': `
                 <h1>Ejemplos de Uso</h1>
                 <h2>Registrar un gasto</h2>
-                <p>Escribe: "GastÃ© 25000 en transporte"</p>
+                <p>Escribe: "Gasté 25000 en transporte"</p>
                 <h2>Ver sueldo</h2>
                 <p>Escribe: "saldo"</p>
                 <h2>Agregar gasto fijo</h2>
-                <p>Ve a la secciÃ³n "Gastos Fijos" y haz clic en "Agregar Gasto"</p>
+                <p>Ve a la sección "Gastos Fijos" y haz clic en "Agregar Gasto"</p>
             `,
             'INTERFAZ_WEB.md': `
-                <h1>GuÃ­a de Interfaz Web</h1>
+                <h1>Guía de Interfaz Web</h1>
                 <p>Esta interfaz te permite configurar todo el sistema de forma visual.</p>
                 <h2>Dashboard</h2>
                 <p>Muestra el resumen de tus finanzas: sueldo, gastos, ahorro y saldo bancario.</p>
@@ -1366,7 +1401,7 @@ Para mÃ¡s informaciÃ³n, revisa la documentaciÃ³n en docs/`);
                 <ul>
                     <li>Generador de Excel</li>
                     <li>Bot de registro de gastos</li>
-                    <li>AutomatizaciÃ³n mensual</li>
+                    <li>Automatización mensual</li>
                     <li>Interfaz web</li>
                 </ul>
             `
@@ -1384,7 +1419,7 @@ Para mÃ¡s informaciÃ³n, revisa la documentaciÃ³n en docs/`);
     }
     
     markdownToHtml(markdown) {
-        // ConversiÃ³n bÃ¡sica de Markdown a HTML
+        // Conversión básica de Markdown a HTML
         let html = markdown
             // Headers
             .replace(/^### (.*$)/gim, '<h3>$1</h3>')
@@ -1461,7 +1496,7 @@ Para mÃ¡s informaciÃ³n, revisa la documentaciÃ³n en docs/`);
         };
         this.config.historial_saldos.saldo_mes_anterior = nuevoSaldoInicioMes;
         
-        // Guardar configuraciÃ³n automÃ¡ticamente
+        // Guardar configuración automáticamente
         this.saveConfig().then((saved) => {
             if (!saved) {
                 this.showToast('No se pudo guardar el saldo en servidor', 'warning');
@@ -1533,61 +1568,54 @@ Para mÃ¡s informaciÃ³n, revisa la documentaciÃ³n en docs/`);
     async sincronizarTodo() {
         const btnSync = document.getElementById('btn-sync-general');
         const statusDiv = document.getElementById('sync-status-header');
-        
-        // Mostrar estado de sincronizaciÃ³n
+
+        // Mostrar estado de sincronizacion
         btnSync.classList.add('syncing');
         statusDiv.style.display = 'block';
         btnSync.disabled = true;
-        
+
         try {
-            // Primero guardar la configuraciÃ³n actual
-            const guardadoOk = await this.saveConfig();
+            // Primero guardar la configuracion actual
+            const guardadoOk = await this.saveConfig(false);
             if (!guardadoOk) {
                 throw new Error('No se pudo guardar la configuracion antes de sincronizar');
             }
-            
-            // Llamar al endpoint de sincronizaciÃ³n
+
+            // Sincronizar la hoja del mes actual con Drive
             const response = await fetch('/api/sync-drive', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                }
+                },
+                body: JSON.stringify({ month_mode: 'actual' }),
             });
-            
-            if (!response.ok) {
-                throw new Error('Error en la sincronizaciÃ³n');
-            }
-            
+
             const result = await response.json();
-            
-            if (result.success) {
-                let detalleExtra = '';
-                if (typeof result.ingresos_extra_total === 'number') {
-                    detalleExtra = ` | Ingresos extra mes: ${this.formatMoney(result.ingresos_extra_total)}`;
-                }
-                this.showToast(`âœ“ Todo sincronizado con Google Drive${detalleExtra}`, 'success');
-                
-                if (result.enlace) {
-                    // Preguntar si quiere ver el archivo
-                    if (confirm('SincronizaciÃ³n exitosa. Â¿Deseas ver el archivo en Google Drive?')) {
-                        window.open(result.enlace, '_blank');
-                    }
-                }
-            } else {
-                throw new Error(result.message || 'Error desconocido');
+            if (!response.ok || !result.success) {
+                throw new Error(result.message || 'Error en la sincronizacion');
             }
-            
+
+            let detalleExtra = '';
+            if (typeof result.ingresos_extra_total === 'number') {
+                detalleExtra = ` | Ingresos extra mes: ${this.formatMoney(result.ingresos_extra_total)}`;
+            }
+            this.showToast(`Todo sincronizado con Google Drive${detalleExtra}`, 'success');
+
+            if (result.enlace) {
+                if (confirm('Sincronizacion exitosa. Deseas ver el archivo en Google Drive?')) {
+                    window.open(result.enlace, '_blank');
+                }
+            }
         } catch (error) {
             console.error('Error sincronizando:', error);
             this.showToast('Error al sincronizar: ' + error.message, 'error');
         } finally {
-            // Restaurar botÃ³n
+            // Restaurar boton
             btnSync.classList.remove('syncing');
             statusDiv.style.display = 'none';
             btnSync.disabled = false;
         }
     }
-
     showToast(message, type = 'info') {
         const container = document.getElementById('toast-container');
         const toast = document.createElement('div');
@@ -1615,7 +1643,8 @@ Para mÃ¡s informaciÃ³n, revisa la documentaciÃ³n en docs/`);
     }
 }
 
-// Inicializar la aplicaciÃ³n
+// Inicializar la aplicación
 const configManager = new ConfigManager();
 window.configManager = configManager;
+
 
