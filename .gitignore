@@ -1,0 +1,77 @@
+﻿# =========================
+# Sensitive local config
+# =========================
+config/configuracion.json
+config/credentials.json
+config/token.pickle
+config/token.json
+config/*.pem
+config/*.key
+
+# keep safe template
+!config/configuracion.example.json
+
+# =========================
+# Environment files
+# =========================
+.env
+.env.*
+!.env.example
+
+# =========================
+# Python cache/build
+# =========================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.build/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# =========================
+# Virtual environments
+# =========================
+.venv/
+venv/
+env/
+ENV/
+
+# =========================
+# IDE / OS files
+# =========================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# =========================
+# Logs and runtime outputs
+# =========================
+logs/*
+!logs/.gitkeep
+*.log
+
+# =========================
+# Excel/temp outputs
+# =========================
+excel_templates/*.xlsx
+!excel_templates/.gitkeep
+~$*.xlsx
+~$*.xls
+*.xlsx~
+*.xls~
+
+# local temp folders
+.temp/
+temp/
+tmp/

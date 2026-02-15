@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Gastos - Configuracion</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-wallet"></i>
+                <h2>Control de Gastos</h2>
+            </div>
+
+            <ul class="sidebar-menu">
+                <li class="active" data-section="dashboard"><i class="fas fa-home"></i><span>Dashboard</span></li>
+                <li data-section="sueldo"><i class="fas fa-money-bill-wave"></i><span>Mi Sueldo</span></li>
+                <li data-section="saldo-bancario"><i class="fas fa-university"></i><span>Saldo Bancario</span></li>
+                <li data-section="gastos-fijos"><i class="fas fa-file-invoice-dollar"></i><span>Gastos Fijos</span></li>
+                <li data-section="deudas"><i class="fas fa-credit-card"></i><span>Deudas</span></li>
+                <li data-section="flujos-efectivo"><i class="fas fa-hand-holding-usd"></i><span>Retiros y MOVII</span></li>
+                <li data-section="categorias"><i class="fas fa-tags"></i><span>Categorias</span></li>
+                <li data-section="excel"><i class="fas fa-file-excel"></i><span>Generar Excel</span></li>
+                <li data-section="drive"><i class="fab fa-google-drive"></i><span>Google Drive</span></li>
+                <li data-section="logs"><i class="fas fa-history"></i><span>Historial</span></li>
+                <li data-section="documentacion"><i class="fas fa-book"></i><span>Documentacion</span></li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <button id="btn-guardar-todo" class="btn-primary"><i class="fas fa-save"></i> Guardar Cambios</button>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <header class="header">
+                <h1 id="page-title">Dashboard</h1>
+                <div class="header-actions">
+                    <button id="btn-sync-general" class="btn-icon btn-sync-header" title="Sincronizar con Google Drive">
+                        <i class="fas fa-sync"></i>
+                    </button>
+                    <div id="sync-status-header" class="sync-status" style="display:none;">
+                        <i class="fas fa-circle-notch fa-spin"></i>
+                    </div>
+                    <button id="btn-ayuda" class="btn-icon" title="Ayuda"><i class="fas fa-question-circle"></i></button>
+                    <div class="user-info"><span id="user-name">Usuario</span><i class="fas fa-user-circle"></i></div>
+                </div>
+            </header>
+
+            <div class="content-area">
+                <section id="dashboard-section" class="section active">
+                    <div class="dashboard-grid">
+                        <div class="card stat-card sueldo">
+                            <div class="stat-icon"><i class="fas fa-money-bill-wave"></i></div>
+                            <div class="stat-info"><h3>Sueldo Mensual</h3><p class="stat-value" id="dash-sueldo">$0</p></div>
+                        </div>
+                        <div class="card stat-card sueldo">
+                            <div class="stat-icon"><i class="fas fa-plus-circle"></i></div>
+                            <div class="stat-info"><h3>Ingresos Extra Mes</h3><p class="stat-value" id="dash-ingresos-extra">$0</p></div>
+                        </div>
+                        <div class="card stat-card sueldo">
+                            <div class="stat-icon"><i class="fas fa-coins"></i></div>
+                            <div class="stat-info"><h3>Ingreso Total Mes</h3><p class="stat-value" id="dash-ingreso-total">$0</p></div>
+                        </div>
+                        <div class="card stat-card gastos-fijos">
+                            <div class="stat-icon"><i class="fas fa-file-invoice-dollar"></i></div>
+                            <div class="stat-info"><h3>Total Gastos Fijos</h3><p class="stat-value" id="dash-gastos-fijos">$0</p></div>
+                        </div>
+                        <div class="card stat-card ahorro">
+                            <div class="stat-icon"><i class="fas fa-credit-card"></i></div>
+                            <div class="stat-info"><h3>Total Deudas</h3><p class="stat-value" id="dash-deudas">$0</p></div>
+                        </div>
+                        <div class="card stat-card ahorro">
+                            <div class="stat-icon"><i class="fas fa-piggy-bank"></i></div>
+                            <div class="stat-info"><h3>Ahorro Disponible</h3><p class="stat-value" id="dash-ahorro">$0</p></div>
+                        </div>
+                        <div class="card stat-card categorias">
+                            <div class="stat-icon"><i class="fas fa-layer-group"></i></div>
+                            <div class="stat-info"><h3>Compromisos Fijos</h3><p class="stat-value" id="dash-compromisos">$0</p></div>
+                        </div>
+                        <div class="card stat-card banco">
+                            <div class="stat-icon"><i class="fas fa-money-bill-transfer"></i></div>
+                            <div class="stat-info"><h3>Retiro en Efectivo</h3><p class="stat-value" id="dash-retiro-efectivo">$0</p></div>
+                        </div>
+                        <div class="card stat-card banco">
+                            <div class="stat-icon"><i class="fas fa-mobile-alt"></i></div>
+                            <div class="stat-info"><h3>Recarga MOVII</h3><p class="stat-value" id="dash-recarga-movii">$0</p></div>
+                        </div>
+                        <div class="card stat-card categorias">
+                            <div class="stat-icon"><i class="fas fa-bullseye"></i></div>
+                            <div class="stat-info"><h3>Presupuesto Variables</h3><p class="stat-value" id="dash-presupuesto-variables">$0</p></div>
+                        </div>
+                        <div class="card stat-card categorias">
+                            <div class="stat-icon"><i class="fas fa-tags"></i></div>
+                            <div class="stat-info"><h3>Categorias</h3><p class="stat-value" id="dash-categorias">0</p></div>
+                        </div>
+                        <div class="card stat-card banco">
+                            <div class="stat-icon"><i class="fas fa-university"></i></div>
+                            <div class="stat-info">
+                                <h3>Saldo en Banco</h3>
+                                <p class="stat-value" id="dash-saldo-banco">$0</p>
+                                <small id="dash-ultima-actualizacion"></small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3><i class="fas fa-chart-pie"></i> Distribucion de Gastos Fijos</h3>
+                        <div id="gastos-chart" class="chart-container">
+                            <div class="chart-placeholder"><i class="fas fa-chart-pie"></i><p>Los gastos se mostraran aqui</p></div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3><i class="fas fa-list"></i> Proximos Pagos</h3>
+                        <div id="proximos-pagos" class="pagos-list">
+                            <p class="empty-state">Configura tus gastos y deudas para ver los proximos pagos</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="sueldo-section" class="section">
+                    <div class="card">
+                        <h2><i class="fas fa-money-bill-wave"></i> Configurar Sueldo</h2>
+                        <div class="form-group">
+                            <label for="nombre-usuario">Tu Nombre</label>
+                            <input type="text" id="nombre-usuario" placeholder="Ej: Juan Perez">
+                        </div>
+                        <div class="form-group">
+                            <label for="sueldo-mensual">Sueldo Mensual (COP)</label>
+                            <div class="input-group"><span class="input-prefix">$</span><input type="number" id="sueldo-mensual" min="0" step="1000"></div>
+                            <small class="help-text">Este es tu ingreso mensual fijo</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="presupuesto-variables">Presupuesto Mensual para Variables (COP)</label>
+                            <div class="input-group"><span class="input-prefix">$</span><input type="number" id="presupuesto-variables" min="0" step="1000"></div>
+                            <small class="help-text">Limite objetivo para gastos variables del mes</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Moneda</label>
+                            <select id="moneda" disabled><option value="COP">Pesos Colombianos (COP)</option></select>
+                        </div>
+                        <div class="actions">
+                            <button id="btn-guardar-sueldo" class="btn-primary"><i class="fas fa-save"></i> Guardar Sueldo</button>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3><i class="fas fa-plus-circle"></i> Ingresos Extra del Mes Actual</h3>
+                        <p class="section-description">Aqui puedes agregar ingresos no recurrentes del mes (prima, intereses, bonos, etc.).</p>
+                        <div class="form-group">
+                            <label for="ingreso-extra-concepto">Concepto</label>
+                            <input type="text" id="ingreso-extra-concepto" placeholder="Ej: Prima, Intereses cesantias, Bono">
+                        </div>
+                        <div class="form-group">
+                            <label for="ingreso-extra-valor">Valor (COP)</label>
+                            <div class="input-group"><span class="input-prefix">$</span><input type="text" id="ingreso-extra-valor" inputmode="numeric" placeholder="Ej: 600000 o 600.000"></div>
+                        </div>
+                        <div class="actions">
+                            <button id="btn-agregar-ingreso-extra" class="btn-success"><i class="fas fa-plus"></i> Agregar Ingreso Extra</button>
+                        </div>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead><tr><th>Concepto</th><th>Valor (COP)</th><th>Acciones</th></tr></thead>
+                                <tbody id="ingresos-extra-tbody"></tbody>
+                            </table>
+                        </div>
+                        <div class="card summary-card">
+                            <div class="summary-item"><span>Total Ingresos Extra Mes:</span><strong id="total-ingresos-extra-mes">$0</strong></div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="saldo-bancario-section" class="section">
+                    <div class="card">
+                        <h2><i class="fas fa-university"></i> Actualizar Saldo Bancario</h2>
+                        <div class="saldo-info-cards">
+                            <div class="saldo-info-item"><span class="saldo-label">Saldo Inicio Mes (Registrado):</span><span class="saldo-value" id="saldo-inicio-registrado">$0</span></div>
+                            <div class="saldo-info-item"><span class="saldo-label">Saldo Actual Registrado:</span><span class="saldo-value" id="saldo-actual-registrado">$0</span></div>
+                            <div class="saldo-info-item"><span class="saldo-label">Ultima Actualizacion:</span><span class="saldo-fecha" id="saldo-ultima-actualizacion">-</span></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="saldo-inicio-mes">Saldo Inicio de Mes (COP)</label>
+                            <div class="input-group"><span class="input-prefix">$</span><input type="number" id="saldo-inicio-mes" min="0" step="0.01"></div>
+                            <small class="help-text">Este valor representa con cuanto arrancaste el mes</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="saldo-bancario-actual">Nuevo Saldo en Banco (COP)</label>
+                            <div class="input-group"><span class="input-prefix">$</span><input type="number" id="saldo-bancario-actual" min="0" step="0.01"></div>
+                            <small class="help-text">Este es el saldo REAL actual que tienes en la cuenta</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="notas-saldo">Notas (opcional)</label>
+                            <textarea id="notas-saldo" rows="3"></textarea>
+                        </div>
+                        <div class="actions">
+                            <button id="btn-actualizar-saldo" class="btn-primary"><i class="fas fa-sync"></i> Actualizar Saldo</button>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="gastos-fijos-section" class="section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-file-invoice-dollar"></i> Gastos Fijos</h2>
+                        <button id="btn-agregar-gasto" class="btn-success"><i class="fas fa-plus"></i> Agregar Gasto</button>
+                    </div>
+                    <div class="card">
+                        <div class="table-container">
+                            <table id="tabla-gastos" class="data-table">
+                                <thead><tr><th>Concepto</th><th>Valor (COP)</th><th>Dia/Frecuencia</th><th>Categoria</th><th>Acciones</th></tr></thead>
+                                <tbody id="gastos-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="card summary-card">
+                        <div class="summary-item"><span>Total Gastos Fijos:</span><strong id="total-gastos-fijos">$0</strong></div>
+                        <div class="summary-item"><span>% del Sueldo:</span><strong id="porcentaje-gastos">0%</strong></div>
+                    </div>
+                </section>
+
+                <section id="deudas-section" class="section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-credit-card"></i> Deudas Mensuales</h2>
+                        <button id="btn-agregar-deuda" class="btn-success"><i class="fas fa-plus"></i> Agregar Deuda</button>
+                    </div>
+                    <div class="card">
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead><tr><th>Concepto</th><th>Valor (COP)</th><th>Dia/Frecuencia</th><th>Detalle</th><th>Acciones</th></tr></thead>
+                                <tbody id="deudas-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="card summary-card">
+                        <div class="summary-item"><span>Total Deudas:</span><strong id="total-deudas-fijas">$0</strong></div>
+                    </div>
+                </section>
+
+                <section id="flujos-efectivo-section" class="section">
+                    <div class="card">
+                        <h2><i class="fas fa-hand-holding-usd"></i> Retiros en Efectivo y Recarga MOVII</h2>
+                        <p class="section-description">
+                            Selecciona que gastos/deudas quieres pagar por retiro en efectivo y cuales por recarga MOVII.
+                            Los totales se usan en la web y en el Excel mensual.
+                        </p>
+                        <div class="flujos-grid">
+                            <div class="flujo-card">
+                                <h3><i class="fas fa-money-bill-wave"></i> Retiro en Efectivo</h3>
+                                <p class="help-text">Ejemplo: arriendo y cualquier otro item que quieras sacar en efectivo.</p>
+                                <div id="retiro-efectivo-items" class="flujo-items-list"></div>
+                                <div class="flujo-total-row">
+                                    <span>Total a retirar:</span>
+                                    <strong id="total-retiro-efectivo">$0</strong>
+                                </div>
+                                <small id="resumen-retiro-efectivo" class="help-text"></small>
+                            </div>
+                            <div class="flujo-card">
+                                <h3><i class="fas fa-mobile-alt"></i> Recarga MOVII</h3>
+                                <p class="help-text">Selecciona los items que quieres cubrir con la recarga del mes.</p>
+                                <div id="movii-items" class="flujo-items-list"></div>
+                                <div class="flujo-total-row">
+                                    <span>Total recarga MOVII:</span>
+                                    <strong id="total-recarga-movii">$0</strong>
+                                </div>
+                                <small id="resumen-recarga-movii" class="help-text"></small>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="categorias-section" class="section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-tags"></i> Categorias de Gastos</h2>
+                        <button id="btn-agregar-categoria" class="btn-success"><i class="fas fa-plus"></i> Agregar Categoria</button>
+                    </div>
+                    <div class="card">
+                        <div id="categorias-grid" class="categorias-grid"></div>
+                    </div>
+                </section>
+
+                <section id="excel-section" class="section">
+                    <div class="card">
+                        <h2><i class="fas fa-file-excel"></i> Generar Archivo Excel</h2>
+                        <div class="excel-options">
+                            <div class="option-card">
+                                <i class="fas fa-file-excel"></i>
+                                <h3>Mes Actual</h3>
+                                <p id="mes-actual"></p>
+                                <button id="btn-excel-actual" class="btn-primary"><i class="fas fa-download"></i> Crear Excel</button>
+                            </div>
+                            <div class="option-card">
+                                <i class="fas fa-calendar-plus"></i>
+                                <h3>Mes Siguiente</h3>
+                                <p id="mes-siguiente"></p>
+                                <button id="btn-excel-siguiente" class="btn-secondary"><i class="fas fa-forward"></i> Crear Siguiente</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="drive-section" class="section">
+                    <div class="card">
+                        <h2><i class="fab fa-google-drive"></i> Google Drive</h2>
+                        <div id="drive-no-configurado" class="drive-status no-config">
+                            <i class="fas fa-cloud"></i>
+                            <h3>Google Drive no configurado</h3>
+                            <button id="btn-configurar-drive" class="btn-primary"><i class="fas fa-cog"></i> Configurar Drive</button>
+                        </div>
+                        <div id="drive-configurado" class="drive-status config" style="display:none;">
+                            <i class="fas fa-check-circle"></i>
+                            <h3>Google Drive Configurado</h3>
+                            <div class="drive-actions">
+                                <button id="btn-sync-ahora" class="btn-primary"><i class="fas fa-sync"></i> Sincronizar Ahora</button>
+                                <button id="btn-backup" class="btn-secondary"><i class="fas fa-archive"></i> Crear Backup</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="logs-section" class="section">
+                    <div class="card">
+                        <h2><i class="fas fa-history"></i> Historial de Actividad</h2>
+                        <div id="logs-container" class="logs-container"></div>
+                    </div>
+                </section>
+
+                <section id="documentacion-section" class="section">
+                    <div class="section-header"><h2><i class="fas fa-book"></i> Documentacion</h2></div>
+                    <div class="card">
+                        <div class="docs-grid">
+                            <div class="doc-card" onclick="configManager.cargarDocumentacion('DOCUMENTACION.md')"><i class="fas fa-file-alt"></i><h3>Documentacion Completa</h3></div>
+                            <div class="doc-card" onclick="configManager.cargarDocumentacion('INSTALACION.md')"><i class="fas fa-download"></i><h3>Guia de Instalacion</h3></div>
+                            <div class="doc-card" onclick="configManager.cargarDocumentacion('EJEMPLOS.md')"><i class="fas fa-lightbulb"></i><h3>Ejemplos de Uso</h3></div>
+                            <div class="doc-card" onclick="configManager.cargarDocumentacion('INTERFAZ_WEB.md')"><i class="fas fa-desktop"></i><h3>Guia Interfaz Web</h3></div>
+                            <div class="doc-card" onclick="configManager.cargarDocumentacion('RESUMEN.md')"><i class="fas fa-clipboard-check"></i><h3>Resumen del Proyecto</h3></div>
+                        </div>
+                    </div>
+                    <div class="card" id="doc-visor-card" style="display:none;">
+                        <div class="doc-header">
+                            <h3 id="doc-titulo"></h3>
+                            <button class="btn-icon" onclick="configManager.cerrarDocumento()" title="Cerrar"><i class="fas fa-times"></i></button>
+                        </div>
+                        <div id="doc-contenido" class="doc-content"></div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <div id="modal-gasto" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h3 id="modal-gasto-titulo">Agregar Gasto Fijo</h3><button class="modal-close">&times;</button></div>
+            <div class="modal-body">
+                <div class="form-group"><label for="gasto-nombre">Nombre del Concepto</label><input type="text" id="gasto-nombre"></div>
+                <div class="form-group"><label for="gasto-valor">Valor (COP)</label><div class="input-group"><span class="input-prefix">$</span><input type="number" id="gasto-valor" min="0" step="100"></div></div>
+                <div class="form-group"><label for="gasto-tipo-fecha">Tipo de Fecha</label><select id="gasto-tipo-fecha"><option value="dia">Dia especifico del mes</option><option value="frecuencia">Frecuencia</option></select></div>
+                <div class="form-group" id="grupo-dia"><label for="gasto-dia">Dia del Mes</label><input type="number" id="gasto-dia" min="1" max="31"></div>
+                <div class="form-group" id="grupo-frecuencia" style="display:none;"><label for="gasto-frecuencia">Frecuencia</label><select id="gasto-frecuencia"><option value="mensual">Mensual</option><option value="quincenal">Quincenal</option><option value="semanal">Semanal</option></select></div>
+                <div class="form-group"><label for="gasto-categoria">Categoria</label><select id="gasto-categoria"></select></div>
+            </div>
+            <div class="modal-footer"><button class="btn-secondary modal-cancel">Cancelar</button><button class="btn-primary" id="btn-guardar-gasto">Guardar</button></div>
+        </div>
+    </div>
+
+    <div id="modal-deuda" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h3 id="modal-deuda-titulo">Agregar Deuda</h3><button class="modal-close">&times;</button></div>
+            <div class="modal-body">
+                <div class="form-group"><label for="deuda-nombre">Nombre del Concepto</label><input type="text" id="deuda-nombre"></div>
+                <div class="form-group"><label for="deuda-valor">Valor (COP)</label><div class="input-group"><span class="input-prefix">$</span><input type="number" id="deuda-valor" min="0" step="100"></div></div>
+                <div class="form-group"><label for="deuda-tipo-fecha">Tipo de Fecha</label><select id="deuda-tipo-fecha"><option value="dia">Dia especifico del mes</option><option value="frecuencia">Frecuencia</option></select></div>
+                <div class="form-group" id="grupo-deuda-dia"><label for="deuda-dia">Dia del Mes</label><input type="number" id="deuda-dia" min="1" max="31"></div>
+                <div class="form-group" id="grupo-deuda-frecuencia" style="display:none;"><label for="deuda-frecuencia">Frecuencia</label><select id="deuda-frecuencia"><option value="mensual">Mensual</option><option value="quincenal">Quincenal</option><option value="semanal">Semanal</option></select></div>
+                <div class="form-group"><label for="deuda-detalle">Detalle / Nota</label><textarea id="deuda-detalle" rows="3"></textarea></div>
+            </div>
+            <div class="modal-footer"><button class="btn-secondary modal-cancel">Cancelar</button><button class="btn-primary" id="btn-guardar-deuda">Guardar</button></div>
+        </div>
+    </div>
+
+    <div id="modal-categoria" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h3>Agregar Categoria</h3><button class="modal-close">&times;</button></div>
+            <div class="modal-body"><div class="form-group"><label for="categoria-nombre">Nombre de la Categoria</label><input type="text" id="categoria-nombre"></div></div>
+            <div class="modal-footer"><button class="btn-secondary modal-cancel">Cancelar</button><button class="btn-primary" id="btn-guardar-categoria">Guardar</button></div>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+    <script src="app.js?v=20260215-2"></script>
+</body>
+</html>

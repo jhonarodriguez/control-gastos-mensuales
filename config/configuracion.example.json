@@ -1,0 +1,124 @@
+{
+  "usuario": {
+    "nombre": ""
+  },
+  "sueldo": {
+    "valor_fijo": 4600000,
+    "moneda": "COP"
+  },
+  "presupuesto_variables": 0,
+  "saldo_bancario": {
+    "valor_actual": 0,
+    "moneda": "COP",
+    "ultima_actualizacion": null,
+    "notas": ""
+  },
+  "historial_saldos": {
+    "saldo_mes_anterior": 0,
+    "mes_anterior": "",
+    "saldos_mensuales": {}
+  },
+  "gastos_fijos": {
+    "arriendo": {
+      "valor": 0,
+      "frecuencia": "mensual",
+      "categoria": "Vivienda"
+    },
+    "mercado_primera_quincena": {
+      "valor": 0,
+      "dia_cargo": 1,
+      "categoria": "Alimentacion"
+    },
+    "mercado_segunda_quincena": {
+      "valor": 0,
+      "dia_cargo": 15,
+      "categoria": "Alimentacion"
+    },
+    "servicio_gas": {
+      "valor": 0,
+      "dia_cargo": 10,
+      "categoria": "Servicios"
+    },
+    "descuento_quincenal": {
+      "valor": 5000,
+      "frecuencia": "quincenal",
+      "categoria": "Descuentos"
+    },
+    "gimnasio": {
+      "valor": 0,
+      "dia_cargo": 1,
+      "categoria": "Salud/Bienestar"
+    },
+    "netflix": {
+      "valor": 0,
+      "dia_cargo": 5,
+      "categoria": "Entretenimiento"
+    },
+    "movistar": {
+      "valor": 0,
+      "dia_cargo": 10,
+      "categoria": "Servicios"
+    },
+    "youtube_premium": {
+      "valor": 0,
+      "dia_cargo": 5,
+      "categoria": "Entretenimiento"
+    },
+    "google_drive": {
+      "valor": 0,
+      "dia_cargo": 1,
+      "categoria": "Tecnologia"
+    },
+    "gamepass": {
+      "valor": 0,
+      "dia_cargo": 15,
+      "categoria": "Entretenimiento"
+    },
+    "mercadolibre": {
+      "valor": 0,
+      "dia_cargo": 1,
+      "categoria": "Compras"
+    }
+  },
+  "deudas_fijas": {},
+  "categorias_gastos": [
+    "Vivienda",
+    "Alimentacion",
+    "Servicios",
+    "Transporte",
+    "Salud/Bienestar",
+    "Entretenimiento",
+    "Tecnologia",
+    "Compras",
+    "Educacion",
+    "Otros",
+    "Descuentos"
+  ],
+  "google_drive": {
+    "archivo_excel_id": "",
+    "carpeta_backup_id": ""
+  },
+  "whatsapp": {
+    "numero_bot": "",
+    "numero_usuario": ""
+  },
+  "automatizacion": {
+    "hora_creacion_hoja": "00:01",
+    "formato_fecha": "YYYY-MM-DD"
+  },
+  "flujos_efectivo": {
+    "retiro_efectivo_items": [
+      "gasto:arriendo"
+    ],
+    "movii_items": [
+      "gasto:netflix",
+      "gasto:youtube_premium",
+      "gasto:google_drive",
+      "gasto:mercadolibre",
+      "gasto:hbo_max",
+      "gasto:pago_app_fitia",
+      "gasto:sub_facebook_don_j"
+    ],
+    "actualizado_en": null
+  }
+}
