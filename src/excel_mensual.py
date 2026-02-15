@@ -5,6 +5,7 @@ import time
 from datetime import datetime
 
 import openpyxl
+from openpyxl.formatting.rule import ColorScaleRule, DataBarRule
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 
 
@@ -387,6 +388,55 @@ class GeneradorExcelMensual:
             self._colorear(ws, f'I{f}', 'F8D7DA')
             self._colorear(ws, f'J{f}', self.colores['notas'])
 
+
+    def _aplicar_banding(self, ws, columnas, fila_inicio, fila_fin, color_par, color_impar):
+        for fila in range(fila_inicio, fila_fin + 1):
+            color = color_par if fila % 2 == 0 else color_impar
+            for col in columnas:
+                self._colorear(ws, f'{col}{fila}', color)
+
+    def _aplicar_formato_visual(self, ws):
+        ws.conditional_formatting.add(
+            'B14',
+            ColorScaleRule(
+                start_type='num',
+                start_value=-200000,
+                start_color='F44336',
+                mid_type='num',
+                mid_value=0,
+                mid_color='FFF59D',
+                end_type='num',
+                end_value=200000,
+                end_color='4CAF50',
+            ),
+        )
+
+        ws.conditional_formatting.add(
+            'B18',
+            ColorScaleRule(
+                start_type='num',
+                start_value=-200000,
+                start_color='E53935',
+                mid_type='num',
+                mid_value=0,
+                mid_color='FFF59D',
+                end_type='num',
+                end_value=200000,
+                end_color='43A047',
+            ),
+        )
+
+        ws.conditional_formatting.add(
+            'B8:B11',
+            DataBarRule(
+                start_type='num',
+                start_value=0,
+                end_type='max',
+                color='5C6BC0',
+                showValue=True,
+            ),
+        )
+
     def _construir_layout_base(self, ws, mes_nombre, anio):
         sueldo = self._normalizar_numero(self.config.get('sueldo', {}).get('valor_fijo', 0))
         saldo_real = self._normalizar_numero(self.config.get('saldo_bancario', {}).get('valor_actual', 0))
@@ -410,7 +460,7 @@ class GeneradorExcelMensual:
 
         # Encabezados de bloques
         ws.merge_cells('A2:C2')
-        ws['A2'] = 'RESUMEN DEL MES'
+        ws['A2'] = 'RESUMEN EJECUTIVO DEL MES'
         self._colorear(ws, 'A2', self.colores['resumen'], bold=True, font_color='FFFFFF', align='center')
 
         ws.merge_cells('E2:G2')
@@ -448,7 +498,7 @@ class GeneradorExcelMensual:
             (10, 'Total variables', f'=K{self.FILA_VARIABLES_TOTAL}', self.colores['variables_header']),
             (11, 'TOTAL GASTOS MES', '=B8+B9+B10', 'FFB74D'),
             (12, 'Saldo proyectado (inicio + ingresos - gastos)', '=B7+B6-B11', self.colores['total']),
-            (13, 'Saldo REAL en banco', saldo_real, 'FFD54F'),
+            (13, 'Saldo real en banco', saldo_real, 'FFD54F'),
             (14, 'Diferencia (real - proyectado)', '=B13-B12', self.colores['alerta']),
             (15, 'Presupuesto variables', presupuesto_variables, self.colores['saldo']),
             (16, '% gasto sobre ingreso total', '=IF(B6=0,0,B11/B6)', self.colores['saldo']),
@@ -480,6 +530,9 @@ class GeneradorExcelMensual:
             if len(ingresos_extra_detalle) > 3:
                 detalles_txt += f' | +{len(ingresos_extra_detalle) - 3} más'
             ws['C5'] = detalles_txt
+        ws['C14'] = '=IF(B14=0,"✅ Cuadrado",IF(B14>0,"🟢 Sobrante","🔴 Faltante"))'
+        ws['C16'] = '=IF(B16<=0.5,"🟢 Controlado",IF(B16<=0.7,"🟠 Alto","🔴 Crítico"))'
+        ws['C18'] = '=IF(B18>=0,"🟢 Dentro del presupuesto","🔴 Excedido")'
         ws['C19'] = self._resumir_detalle_flujo(retiro_detalle)
         ws['C20'] = self._resumir_detalle_flujo(movii_detalle)
 
@@ -561,6 +614,33 @@ class GeneradorExcelMensual:
             self._colorear(ws, f'A{fila}', self.colores['ingreso'])
             self._colorear(ws, f'B{fila}', self.colores['ingreso'])
             self._colorear(ws, f'C{fila}', self.colores['notas'])
+
+        self._aplicar_banding(
+            ws,
+            ['E', 'F', 'G'],
+            self.FILA_FIJOS_DATA_INICIO,
+            self.FILA_FIJOS_DATA_FIN,
+            'FFF4D6',
+            'FCE8B2',
+        )
+        self._aplicar_banding(
+            ws,
+            ['H', 'I', 'J'],
+            self.FILA_DEUDAS_DATA_INICIO,
+            self.FILA_DEUDAS_DATA_FIN,
+            'FCE4E7',
+            'F8D7DA',
+        )
+        self._aplicar_banding(
+            ws,
+            ['K', 'L', 'M'],
+            self.FILA_VARIABLES_DATA_INICIO,
+            self.FILA_VARIABLES_DATA_FIN,
+            'FFEBD2',
+            'FFE0B2',
+        )
+
+        self._aplicar_formato_visual(ws)
 
         # Anchos y paneles
         ws.column_dimensions['A'].width = 38
