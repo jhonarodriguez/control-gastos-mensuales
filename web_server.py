@@ -9,11 +9,29 @@ import webbrowser
 import os
 import sys
 import json
+import threading
 from pathlib import Path
 
 PORT = 8080
 WEB_DIR = Path(__file__).parent / "web"
 CONFIG_FILE = Path(__file__).parent / "config" / "configuracion.json"
+BOT_INSTANCE = None
+BOT_LOCK = threading.Lock()
+
+
+def get_bot_instance():
+    """Inicializar (lazy) una unica instancia del bot."""
+    global BOT_INSTANCE
+    if BOT_INSTANCE is not None:
+        return BOT_INSTANCE
+
+    try:
+        from src.bot_whatsapp import BotWhatsApp
+    except ModuleNotFoundError:
+        from bot_whatsapp import BotWhatsApp
+
+    BOT_INSTANCE = BotWhatsApp()
+    return BOT_INSTANCE
 
 class CustomHandler(http.server.SimpleHTTPRequestHandler):
     """Handler personalizado para servir archivos y manejar API"""
@@ -23,11 +41,15 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
     
     def do_GET(self):
         """Manejar peticiones GET"""
-        if self.path == '/api/config':
+        path = self.path.split('?', 1)[0]
+
+        if path == '/api/config':
             self.serve_config()
-        elif self.path.startswith('/api/docs/'):
+        elif path.startswith('/api/docs/'):
             self.serve_docs()
-        elif self.path == '/':
+        elif path == '/api/bot/health':
+            self.bot_health()
+        elif path == '/':
             self.path = '/index.html'
             return super().do_GET()
         else:
@@ -35,12 +57,21 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
     
     def do_POST(self):
         """Manejar peticiones POST"""
-        if self.path == '/api/config':
+        path = self.path.split('?', 1)[0]
+
+        if path == '/api/config':
             self.save_config()
-        elif self.path == '/api/sync-drive':
+        elif path == '/api/sync-drive':
             self.sync_drive()
+        elif path == '/api/bot/message':
+            self.bot_message()
         else:
             self.send_error(404)
+
+    def do_OPTIONS(self):
+        """Responder preflight CORS para clientes web/móviles (Flutter, navegadores)."""
+        self.send_response(204)
+        self.end_headers()
     
     def serve_config(self):
         """Servir el archivo de configuraciÃ³n"""
@@ -163,7 +194,6 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
 
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
-            self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
             self.wfile.write(json.dumps(config).encode())
             
@@ -189,7 +219,6 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
             
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
-            self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
             self.wfile.write(json.dumps({'status': 'ok', 'message': 'ConfiguraciÃ³n guardada'}).encode())
         except Exception as e:
@@ -215,22 +244,112 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
             
             self.send_response(200)
             self.send_header('Content-type', 'text/plain; charset=utf-8')
-            self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
             self.wfile.write(contenido.encode('utf-8'))
             
         except Exception as e:
             print(f"Error sirviendo documentaciÃ³n: {e}")
             self.send_error(500, str(e))
+
+    def bot_health(self):
+        """Verificar estado del bot para clientes moviles/web."""
+        try:
+            get_bot_instance()
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({
+                'success': True,
+                'status': 'ok',
+                'message': 'Bot disponible'
+            }, ensure_ascii=False).encode('utf-8'))
+        except Exception as e:
+            self.send_response(500)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({
+                'success': False,
+                'status': 'error',
+                'message': f'Bot no disponible: {e}'
+            }, ensure_ascii=False).encode('utf-8'))
+
+    def bot_message(self):
+        """Procesar un mensaje del bot y ejecutar la logica existente."""
+        try:
+            content_length = int(self.headers.get('Content-Length', '0'))
+            if content_length <= 0:
+                self.send_response(400)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({
+                    'success': False,
+                    'message': 'Body vacio. Envia JSON con el campo "mensaje".'
+                }, ensure_ascii=False).encode('utf-8'))
+                return
+
+            post_data = self.rfile.read(content_length)
+            payload = json.loads(post_data.decode('utf-8'))
+            if not isinstance(payload, dict):
+                raise ValueError('El body JSON debe ser un objeto.')
+
+            mensaje = str(payload.get('mensaje', '')).strip()
+            numero_remitente = payload.get('numero_remitente')
+
+            if not mensaje:
+                self.send_response(400)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({
+                    'success': False,
+                    'message': 'El campo "mensaje" es obligatorio.'
+                }, ensure_ascii=False).encode('utf-8'))
+                return
+
+            bot = get_bot_instance()
+            with BOT_LOCK:
+                respuesta = bot.procesar_entrada(mensaje, numero_remitente=numero_remitente)
+
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({
+                'success': True,
+                'mensaje': mensaje,
+                'respuesta': respuesta
+            }, ensure_ascii=False).encode('utf-8'))
+
+        except json.JSONDecodeError:
+            self.send_response(400)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({
+                'success': False,
+                'message': 'JSON invalido en el body.'
+            }, ensure_ascii=False).encode('utf-8'))
+        except Exception as e:
+            print(f"Error procesando mensaje del bot: {e}")
+            import traceback
+            traceback.print_exc()
+            self.send_response(500)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({
+                'success': False,
+                'message': f'Error del bot: {e}'
+            }, ensure_ascii=False).encode('utf-8'))
     
     def end_headers(self):
         """Agregar headers para CORS"""
         self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With')
+        self.send_header('Access-Control-Max-Age', '86400')
         self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
         self.send_header('Pragma', 'no-cache')
         self.send_header('Expires', '0')
         super().end_headers()
-    
+
+
     def sync_drive(self):
         """Sincronizar Excel con Google Drive"""
         try:
@@ -340,7 +459,6 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
             # Responder Ã©xito
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
-            self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
             self.wfile.write(json.dumps({
                 'success': True,
@@ -358,14 +476,20 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
             
             self.send_response(500)
             self.send_header('Content-type', 'application/json')
-            self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
             self.wfile.write(json.dumps({
                 'success': False,
                 'message': str(e)
             }).encode())
 
-def start_server(port=PORT, open_browser=True):
+
+class ThreadingTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+    """Servidor HTTP concurrente para evitar bloqueo global por request."""
+    allow_reuse_address = True
+    daemon_threads = True
+
+
+def start_server(port=PORT, open_browser=False):
     """Iniciar el servidor web"""
     
     # Verificar que existe el directorio web
@@ -377,7 +501,7 @@ def start_server(port=PORT, open_browser=True):
     # Intentar usar el puerto especificado, si estÃ¡ ocupado buscar otro
     while True:
         try:
-            with socketserver.TCPServer(("", port), CustomHandler) as httpd:
+            with ThreadingTCPServer(("", port), CustomHandler) as httpd:
                 url = f"http://localhost:{port}"
                 print(f"\n{'='*60}")
                 print(f"  SERVIDOR WEB INICIADO")
